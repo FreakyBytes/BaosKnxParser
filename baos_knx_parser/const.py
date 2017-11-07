@@ -1,4 +1,4 @@
-from bitmask import Bitmask, BitmaskEnum
+from .bitmask import Bitmask, BitmaskEnum
 
 
 class APCI(BitmaskEnum):

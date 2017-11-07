@@ -1,8 +1,8 @@
 
 from datetime import datetime
 
-import struct  # precompiled bitstructs
-from const import TelegramType, TelegramPriority, APCI
+from . import struct  # precompiled bitstructs
+from .const import TelegramType, TelegramPriority, APCI
 
 
 class KnxAddress(object):

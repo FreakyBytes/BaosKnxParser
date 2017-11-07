@@ -1,1 +1,1 @@
-bitstruct>=3.3,<3.4
+bitstruct>=3.5,<3.6

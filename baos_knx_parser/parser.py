@@ -1,7 +1,7 @@
 
-import struct
-from const import TelegramType
-from knx import KnxAddress, KnxExtendedTelegram, KnxStandardTelegram
+from . import struct
+from .const import TelegramType
+from .knx import KnxAddress, KnxExtendedTelegram, KnxStandardTelegram
 
 
 def parse_knx_telegram(binary, timestamp=None):
