@@ -3,7 +3,7 @@
 from distutils.core import setup
 
 setup(name='BaosKnxParser',
-      version='0.1.0',
+      version='0.2.0',
       description='simple Python library to parse BAOS KNX packages',
       author='Martin Peters',
       author_email='',
