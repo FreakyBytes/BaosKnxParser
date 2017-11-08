@@ -32,6 +32,18 @@ class KnxAddress(object):
             delim=KnxAddress.PHYSICAL_DELIMITER if not self.group else KnxAddress.GROUP_DELIMITER
         )
 
+    def __int__(self):
+        if not self.group:
+            bin_addr = struct.KNX_ADDR_PHYSICAL.pack(self.area, self.line, self.device)
+        else:
+            bin_addr = struct.KNX_ADDR_GROUP.pack(self.area, self.line, self.device)
+
+        integer, = struct.STD_U16.unpack(bin_addr)
+        return integer
+
+    def __float__(self):
+        return float(self.__int__())
+
 
 class KnxBaseTelegram(object):
 
