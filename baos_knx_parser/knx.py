@@ -74,12 +74,19 @@ class KnxBaseTelegram(object):
         return TPCI(tpci_num)
 
     @property
-    def packet_count(self):
+    def packet_number(self):
         if not self.payload:
             return None
 
         count, = struct.KNX_PACKET_NUMBER.unpack(self.payload[0:2])
         return count
+
+    @property
+    def packet_count(self):
+        import warnings
+        warnings.warn("packet_count is deprecated, used packet_number", DeprecationWarning)
+
+        return self.packet_number
 
 
 class KnxStandardTelegram(KnxBaseTelegram):
