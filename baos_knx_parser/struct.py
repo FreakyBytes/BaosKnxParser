@@ -11,3 +11,5 @@ KNX_DRL = bitstruct.compile('>b1u3u4')
 KNX_LENGTH = bitstruct.compile('>u8')
 
 KNX_APCI = bitstruct.compile('>p6u10')
+KNX_TPCI = bitstruct.compile('>u2p4p2')
+KNX_PACKET_NUMBER = bitstruct.compile('>p2u4p2')

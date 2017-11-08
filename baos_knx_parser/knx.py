@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from . import struct  # precompiled bitstructs
-from .const import TelegramType, TelegramPriority, APCI
+from .const import TelegramType, TelegramPriority, APCI, TPCI
 
 
 class KnxAddress(object):
@@ -64,6 +64,22 @@ class KnxBaseTelegram(object):
 
         apci_num, = struct.KNX_APCI.unpack(self.payload[0:3])
         return APCI(apci_num)
+
+    @property
+    def tpci(self):
+        if not self.payload:
+            return None
+
+        tpci_num, = struct.KNX_TPCI.unpack(self.payload[0:2])
+        return TPCI(tpci_num)
+
+    @property
+    def packet_count(self):
+        if not self.payload:
+            return None
+
+        count, = struct.KNX_PACKET_NUMBER.unpack(self.payload[0:2])
+        return count
 
 
 class KnxStandardTelegram(KnxBaseTelegram):
