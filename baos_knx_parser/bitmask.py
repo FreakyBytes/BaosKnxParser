@@ -100,10 +100,13 @@ class BitmaskEnum(object):
         return self._name
 
     def __int__(self):
-        return self._value
+        return int(self._value)
+
+    def __float__(self):
+        return float(self._value)
 
     def __eq__(self, other):
-        if isinstance(other, ACPIMap):
+        if isinstance(other, BitmaskEnum):
             return self._bitmask == other._bitmask and self._name == other._name
         else:
             return self._bitmask == other
