@@ -52,6 +52,15 @@ class APCI(BitmaskEnum):
     A_KEY_WRITE                                 = 0b1111010011
     A_KEY_RESPONSE                              = 0b1111010100
 
+    A_NETWORK_PARAMETER_READ                    = 0b1111011010
+    A_NETWORK_PARAMETER_RESPONSE                = 0b1111011011
+    A_NETWORK_PARAMETER_WRITE                   = 0b1111100100
+
+    A_LINK_READ                                 = 0b1111100101
+    A_LINK_RESPONSE                             = 0b1111100110
+    A_LINK_WRITE                                = 0b1111100111
+
+    A_DOMAIN_ADDRESS_SELECTIVE_READ             = 0b1111100011
 
 class TPCI(BitmaskEnum):
     UNNUMBERED_DATA_PACKET       = 0b00
