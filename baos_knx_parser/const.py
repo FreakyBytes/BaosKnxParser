@@ -4,10 +4,10 @@ from .bitmask import Bitmask, BitmaskEnum
 class APCI(BitmaskEnum):
     A_GROUP_VALUE_READ                          = 0b0000000000
     A_GROUP_VALUE_RESPONSE                      = Bitmask(0b0001000000, 0b1111000000)  # last 6 bit not set
-    A_GROUP_VALUE_WRITE	                        = Bitmask(0b0010000000, 0b1111000000)  # last 6 bit not set
+    A_GROUP_VALUE_WRITE                         = Bitmask(0b0010000000, 0b1111000000)  # last 6 bit not set
 
     A_INDIVIDUAL_ADDRESS_WRITE                  = 0b0011000000
-    A_INDIVIDUAL_ADDRESS_READ	                = 0b0100000000
+    A_INDIVIDUAL_ADDRESS_READ                   = 0b0100000000
     A_INDIVIDUAL_ADDRESS_RESPONSE               = 0b0101000000
     A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_READ     = 0b1111011100
     A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_RESPONSE = 0b1111011101
