@@ -33,16 +33,18 @@ class KnxAddress(object):
         )
 
     def __int__(self):
-        if not self.group:
-            bin_addr = struct.KNX_ADDR_PHYSICAL.pack(self.area, self.line, self.device)
-        else:
-            bin_addr = struct.KNX_ADDR_GROUP.pack(self.area, self.line, self.device)
-
+        bin_addr = self.to_binary()
         integer, = struct.STD_U16.unpack(bin_addr)
         return integer
 
     def __float__(self):
         return float(self.__int__())
+
+    def to_binary(self):
+        if not self.group:
+            return struct.KNX_ADDR_PHYSICAL.pack(self.area, self.line, self.device)
+        else:
+            return struct.KNX_ADDR_GROUP.pack(self.area, self.line, self.device)
 
 
 class KnxBaseTelegram(object):
@@ -100,6 +102,9 @@ class KnxBaseTelegram(object):
 
         return self.packet_number
 
+    def to_binary(self):
+        raise NotImplemented()
+
 
 class KnxStandardTelegram(KnxBaseTelegram):
 
@@ -117,6 +122,20 @@ class KnxStandardTelegram(KnxBaseTelegram):
         return """KnxStandardTelegram(src='{src}', dest='{dest}', telegram_type={tt},
     repeat={repeat}, ack={ack}, priority={prio}, hop_count=0, timestamp='{timestamp}',
     payload_length={payload_length}, payload=payload=bytes.fromhex('{p}'))""".format(tt=repr(self.telegram_type), prio=repr(self.priority), p=p, **self.__dict__)
+
+    def to_binary(self):
+        binary = b''.join((
+            struct.CEMI_MSG_CODE.pack(0x29),  # cEMI header
+            struct.CEMI_ADD_LEN.pack(0),  # no additional cEMI/BAOS info here, since they are not stored in the KNX Datamodel
+            struct.KNX_CTRL.pack(int(self.telegram_type), not self.repeat, 3, int(self.priority), not self.ack, not self.confirm),
+            struct.KNX_CTRLE.pack(self.dest.group, self.hop_count, 0),
+            self.src.to_binary(),
+            self.dest.to_binary(),
+            struct.KNX_LENGTH.pack(self.payload_length),
+            self.payload,
+        ))
+
+        return binary
 
 
 class KnxExtendedTelegram(KnxBaseTelegram):
@@ -137,3 +156,17 @@ class KnxExtendedTelegram(KnxBaseTelegram):
         return """KnxExtendedTelegram(src='{src}', dest='{dest}', telegram_type={tt},
     repeat={repeat}, ack={ack}, priority={prio}, hop_count=0, timestamp='{timestamp}',
     eff=bytes.fromhex('{eff_hex}'), payload_length={payload_length}, payload=bytes.fromhex('{p}'))""".format(tt=repr(self.telegram_type), prio=repr(self.priority), p=p, eff_hex=eff, **self.__dict__)
+
+    def to_binary(self):
+        binary = b''.join((
+            struct.CEMI_MSG_CODE.pack(0x29),  # cEMI header
+            struct.CEMI_ADD_LEN.pack(0),  # no additional cEMI/BAOS info here, since they are not stored in the KNX Datamodel
+            struct.KNX_CTRL.pack(int(self.telegram_type), not self.repeat, 3, int(self.priority), not self.ack, not self.confirm),
+            struct.KNX_CTRLE.pack(self.dest.group, self.hop_count, self.eff),
+            self.src.to_binary(),
+            self.dest.to_binary(),
+            struct.KNX_LENGTH.pack(self.payload_length),
+            self.payload,
+        ))
+
+        return binary
