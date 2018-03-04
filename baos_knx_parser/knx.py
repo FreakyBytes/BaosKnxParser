@@ -26,6 +26,9 @@ class KnxAddress(object):
 
         self.group = group
 
+    def __repr__(self):
+        return "KnxAddress('{str}', group={group})".format(str=str(self), group=self.group)
+
     def __str__(self):
         return "{area}{delim}{line}{delim}{device}".format(
             area=self.area, line=self.line, device=self.device,
@@ -39,6 +42,12 @@ class KnxAddress(object):
 
     def __float__(self):
         return float(self.__int__())
+
+    def __eq__(self, value):
+        if not isinstance(value, KnxAddress):
+            return False
+
+        return self.group == value.group and self.area == value.area and self.line == value.line and self.device == value.device
 
     def to_binary(self):
         if not self.group:
