@@ -111,11 +111,11 @@ class KnxStandardTelegram(KnxBaseTelegram):
     def __init__(self, payload_length=None, payload=bytes(), *args, **kwargs):
         super(KnxStandardTelegram, self).__init__(*args, **kwargs)
 
-        if payload_length is not None and not len(payload) == payload_length:
+        if payload_length is not None and not len(payload) == payload_length - 2:
             raise TypeError("Payload length mismatch")
 
         self.payload = payload
-        self.payload_length = payload_length if payload_length is not None else len(payload)
+        self.payload_length = payload_length if payload_length is not None else len(payload) - 2
 
     def __repr__(self):
         p = self.payload.hex()
@@ -144,11 +144,11 @@ class KnxExtendedTelegram(KnxBaseTelegram):
         super(KnxExtendedTelegram, self).__init__(*args, **kwargs)
         self.eff = eff
 
-        if payload_length is not None and not len(payload) == payload_length:
+        if payload_length is not None and not len(payload) == payload_length - 2:
             raise TypeError("Payload length mismatch")
 
         self.payload = payload
-        self.payload_length = payload_length if payload_length is not None else len(payload)
+        self.payload_length = payload_length if payload_length is not None else len(payload) - 2
 
     def __repr__(self):
         eff = hex(self.eff)
