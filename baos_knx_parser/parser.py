@@ -1,6 +1,6 @@
 
 from . import struct
-from .const import TelegramType
+from .const import TelegramType, APCI
 from .knx import KnxAddress, KnxExtendedTelegram, KnxStandardTelegram
 
 
@@ -39,7 +39,10 @@ def parse_knx_telegram(binary, timestamp=None):
     # parse payload
     telegram.payload_length, = struct.KNX_LENGTH.unpack(knx_binary[6:7])
     telegram.payload = knx_binary[7:9 + telegram.payload_length]
-
+    if telegram.apci == APCI.A_GROUP_VALUE_WRITE and telegram.payload_length == 0:
+        telegram.payload_data = int(knx_binary[8:9].hex()[1:2], 16)
+    if telegram.apci == APCI.A_GROUP_VALUE_WRITE and telegram.payload_length > 0:
+        telegram.payload_data = int(knx_binary[9:9+telegram.payload_length].hex(), 16)
     return telegram
 
 

@@ -124,13 +124,15 @@ class KnxStandardTelegram(KnxBaseTelegram):
             raise TypeError("Payload length mismatch")
 
         self.payload = payload
+        self.payload_data = None
         self.payload_length = payload_length if payload_length is not None else len(payload) - 2
 
     def __repr__(self):
         p = self.payload.hex()
         return """KnxStandardTelegram(src='{src}', dest='{dest}', telegram_type={tt},
     repeat={repeat}, ack={ack}, priority={prio}, hop_count=0, timestamp='{timestamp}',
-    payload_length={payload_length}, payload=payload=bytes.fromhex('{p}'))""".format(tt=repr(self.telegram_type), prio=repr(self.priority), p=p, **self.__dict__)
+    payload_length={payload_length}, payload=payload=bytes.fromhex('{p}')), payload_data={payload_data}"""\
+            .format(tt=repr(self.telegram_type), prio=repr(self.priority), p=p, **self.__dict__)
 
     def to_binary(self):
         binary = b''.join((
@@ -142,6 +144,7 @@ class KnxStandardTelegram(KnxBaseTelegram):
             self.dest.to_binary(),
             struct.KNX_LENGTH.pack(self.payload_length),
             self.payload,
+            self.payload_data,
         ))
 
         return binary
