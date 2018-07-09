@@ -39,13 +39,8 @@ def parse_knx_telegram(binary, timestamp=None):
     # parse payload
     telegram.payload_length, = struct.KNX_LENGTH.unpack(knx_binary[6:7])
     telegram.payload = knx_binary[7:9 + telegram.payload_length]
-    if telegram.apci == APCI.A_GROUP_VALUE_WRITE and telegram.payload_length == 0:
-        # Take last 6 Bits of Byte as payload-data
-        telegram.payload_data = int(bin(int(knx_binary[8:9].hex(), 16))[4:10])
-    if telegram.apci == APCI.A_GROUP_VALUE_WRITE and telegram.payload_length > 0:
-        telegram.payload_data = int(knx_binary[9:9+telegram.payload_length].hex(), 16)
-    if telegram.apci != APCI.A_GROUP_VALUE_WRITE:
-        raise Exception(f'Parsing of Payload for {telegram.apci} not yet implemented!')
+    apci = telegram.apci
+    telegram.payload_data = parse_payload_data(apci,knx_binary[7:9 + telegram.payload_length], telegram.payload_length)
     return telegram
 
 
@@ -55,3 +50,36 @@ def parse_knx_addr(binary, group=False):
     else:
         area, line, device = struct.KNX_ADDR_PHYSICAL.unpack(binary)
     return KnxAddress(area=area, line=line, device=device, group=group)
+
+
+def parse_payload_data(apci, payload_bytes, payload_length):
+    possible_short_payload = [APCI.A_INDIVIDUAL_ADDRESS_RESPONSE,
+                              APCI.A_GROUP_VALUE_WRITE, APCI.A_GROUP_VALUE_RESPONSE]
+    no_payload = [APCI.A_GROUP_VALUE_READ, APCI.A_INDIVIDUAL_ADDRESS_READ]
+    individual_address_serial_number_payload = [APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_RESPONSE,
+                                                APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_WRITE]
+    network_parameter_payload = [APCI.A_NETWORK_PARAMETER_READ, APCI.A_NETWORK_PARAMETER_RESPONSE,
+                                 APCI.A_NETWORK_PARAMETER_WRITE]
+
+    if apci in possible_short_payload:
+        if payload_length == 0:
+            # Take last 6 Bits of Byte as payload-data
+            payload_data = int(bin(int(payload_bytes[1:2].hex(), 16))[4:10])
+        else:
+            payload_data = int(payload_bytes[2:2 + payload_length].hex(), 16)
+    elif apci in no_payload:
+        payload_data = None
+    elif apci == APCI.A_INDIVIDUAL_ADDRESS_WRITE:
+        payload_data = parse_knx_addr(payload_bytes[2:2 + payload_length])
+    elif apci == APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_READ:
+        payload_data = int(payload_bytes[2:2 + payload_length].hex(), 16)
+    elif apci in individual_address_serial_number_payload:
+        # values separated in Serial number, Domain Address/New Address
+        payload_data = [int(payload_bytes[2:8].hex(), 16), parse_knx_addr(payload_bytes[8:9])]
+    elif apci in network_parameter_payload:
+        # values separated in Interface object type, Property-ID, Test_info/Test_info+Test_result/Value
+        payload_data = [int(payload_bytes[2:4].hex(), 16), int(payload_bytes[4:5].hex(), 16),
+                        int(payload_bytes[5:2 + payload_length].hex(), 16)]
+    else:
+        raise Exception(f'Parsing of Payload for {telegram.apci} not yet implemented!')
+    return payload_data
