@@ -40,9 +40,12 @@ def parse_knx_telegram(binary, timestamp=None):
     telegram.payload_length, = struct.KNX_LENGTH.unpack(knx_binary[6:7])
     telegram.payload = knx_binary[7:9 + telegram.payload_length]
     if telegram.apci == APCI.A_GROUP_VALUE_WRITE and telegram.payload_length == 0:
-        telegram.payload_data = int(knx_binary[8:9].hex()[1:2], 16)
+        # Take last 6 Bits of Byte as payload-data
+        telegram.payload_data = int(bin(int(knx_binary[8:9].hex(), 16))[4:10])
     if telegram.apci == APCI.A_GROUP_VALUE_WRITE and telegram.payload_length > 0:
         telegram.payload_data = int(knx_binary[9:9+telegram.payload_length].hex(), 16)
+    if telegram.apci != APCI.A_GROUP_VALUE_WRITE:
+        raise Exception(f'Parsing of Payload for {telegram.apci} not yet implemented!')
     return telegram
 
 

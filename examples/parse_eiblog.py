@@ -28,11 +28,11 @@ This example requires the additional libraries pandas and numpy
 DUMP_FILE = 'eiblog.txt'
 TELEGRAM_VECTOR_COLUMNS = ('src', 'dest', 'telegram_type', 'repeat', 'ack',
                            'priority', 'confirm', 'hop_count', 'apci', 'tpci',
-                           'packet_number', 'payload_length')
+                           'packet_number', 'payload_length', 'payload', 'payload_data')
 
 
 def telegram2vector(telegram):
-    return (int(getattr(telegram, prop)) for prop in TELEGRAM_VECTOR_COLUMNS)
+    return (getattr(telegram, prop) for prop in TELEGRAM_VECTOR_COLUMNS)
 
 
 # def telegramlist2vectorlist(tlist):
@@ -53,3 +53,7 @@ telegram_df = pd.DataFrame(
     data=read_telegramlog(DUMP_FILE),
     columns=TELEGRAM_VECTOR_COLUMNS,
 )
+
+print(telegram_df.to_string())
+# print(int(telegram_df['payload_data'][0], 16))
+# print(telegram_df['payload_data'][0])
