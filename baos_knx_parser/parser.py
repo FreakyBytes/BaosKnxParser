@@ -54,14 +54,18 @@ def parse_knx_addr(binary, group=False):
 
 def parse_payload_data(apci, payload_bytes, payload_length):
     possible_short_payload = [APCI.A_INDIVIDUAL_ADDRESS_RESPONSE,
-                              APCI.A_GROUP_VALUE_WRITE, APCI.A_GROUP_VALUE_RESPONSE]
-    no_payload = [APCI.A_GROUP_VALUE_READ, APCI.A_INDIVIDUAL_ADDRESS_READ, APCI.A_DOMAIN_ADDRESS_READ]
+                              APCI.A_GROUP_VALUE_WRITE, APCI.A_GROUP_VALUE_RESPONSE, APCI.A_DEVICE_DESCRIPTOR_READ]
+    no_payload = [APCI.A_GROUP_VALUE_READ, APCI.A_INDIVIDUAL_ADDRESS_READ, APCI.A_DOMAIN_ADDRESS_READ,
+                  APCI.A_USER_MANUFACTURE_INFO_READ, APCI.A_RESTART]
     individual_address_serial_number_payload = [APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_RESPONSE,
                                                 APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_WRITE]
     network_parameter_payload = [APCI.A_NETWORK_PARAMETER_READ, APCI.A_NETWORK_PARAMETER_RESPONSE,
                                  APCI.A_NETWORK_PARAMETER_WRITE]
     domain_address_payload = [APCI.A_DOMAIN_ADDRESS_WRITE, APCI.A_DOMAIN_ADDRESS_RESPONSE]
     property_value_payload = [APCI.A_PROPERTY_VALUE_RESPONSE, APCI.A_PROPERTY_VALUE_WRITE]
+    memory_write_payload = [APCI.A_MEMORY_RESPONSE, APCI.A_MEMORY_WRITE]
+    user_memory_payload = [APCI.A_USER_MEMORY_RESPONSE, APCI.A_USER_MEMORY_WRITE]
+    memory_bit_payload = [APCI.A_MEMORY_BIT_WRITE, APCI.A_USER_MEMORY_BIT_WRITE]
 
     if apci in possible_short_payload:
         if payload_length == 0:
@@ -92,14 +96,85 @@ def parse_payload_data(apci, payload_bytes, payload_length):
         # values separated in domain address, start address, range
         payload_data = [parse_knx_addr(payload_bytes[2:4], True), parse_knx_addr(payload_bytes[4:6]), payload_bytes[6]]
     elif apci == APCI.A_PROPERTY_VALUE_READ:
-        payload_bits = bin(int(payload_bytes[4:6]))
+        payload_bits = bin(int(payload_bytes[4:6].hex(), 16))
         # values separated in Object_index, Property_id, nr_of_elem, Start_index
-        payload_data = [payload_bytes[2:3], payload_bytes[3:4], int(payload_bits[0:4]), int(payload_bits[4:])]
+        payload_data = [int(payload_bytes[2:3].hex(), 16), int(payload_bytes[3:4].hex(), 16), int(payload_bits[0:4]),
+                        int(payload_bits[4:])]
     elif apci in property_value_payload:
-        payload_bits = bin(int(payload_bytes[4:6]))
+        payload_bits = bin(int(payload_bytes[4:6].hex(), 16))
         # values separated in Object_index, Property_id, nr_of_elem, Start_index, Data
-        payload_data = [payload_bytes[2:3], payload_bytes[3:4], int(payload_bits[0:4]), int(payload_bits[4:]),
-                        payload_bytes[6:2 + payload_length]]
+        payload_data = [int(payload_bytes[2:3].hex(), 16), int(payload_bytes[3:4].hex(), 16), int(payload_bits[0:4]),
+                        int(payload_bits[4:]), payload_bytes[6:2 + payload_length]]
+    elif apci == APCI.A_PROPERTY_DESCRIPTION_READ:
+        # values separated in Object_index, Property_id, Property_index
+        payload_data = [int(payload_bytes[2:3].hex(), 16), int(payload_bytes[3:4].hex(), 16),
+                        int(payload_bytes[4:5].hex(), 16)]
+    elif apci == APCI.A_PROPERTY_DESCRIPTION_RESPONSE:
+        payload_bits = bin(int(payload_bytes[8:9].hex(), 16))
+        # values separated in Object_index, Property_id, Property_index, Type, max_nr_of_elem,
+        # Access (read_level, write_level)
+        payload_data = [int(payload_bytes[2:3].hex(), 16), int(payload_bytes[3:4].hex(), 16),
+                        int(payload_bytes[4:5].hex(), 16), int(payload_bytes[5:6].hex(), 16),
+                        int(payload_bytes[6:8].hex(), 16), int(payload_bits[0:4]), int(payload_bits[4:])]
+    elif apci == APCI.A_DEVICE_DESCRIPTOR_RESPONSE:
+        # values separated in Descriptor_type, Device descriptor
+        payload_data = [int(bin(int(payload_bytes[1:2].hex(), 16))[4:10]),
+                        int(payload_bytes[2:2 + payload_length].hex(), 16)]
+    elif apci == APCI.A_LINK_READ:
+        # values separated in Group_object_number, Start_index
+        payload_data = [int(payload_bytes[2:3].hex(), 16), int(payload_bytes[3:4].hex(), 16)]
+    elif apci == APCI.A_LINK_RESPONSE:
+        payload_bits = bin(int(payload_bytes[3:4].hex(), 16))
+        # values separated in Group_object_number, Sending_address, Start_address, Group_address_list
+        payload_data = [int(payload_bytes[2:3].hex(), 16), int(payload_bits[0:4]), int(payload_bits[4:]),
+                        int(payload_bytes[4:].hex(), 16)]
+    elif apci == APCI.A_LINK_WRITE:
+        payload_bits = bin(int(payload_bytes[3:4].hex(), 16))
+        # values separated in Group_object_number, d flag, s flag, Group_address
+        payload_data = [int(payload_bytes[2:3].hex(), 16), payload_bits[6:7], payload_bits[7:8],
+                        int(payload_bytes[4:].hex(), 16)]
+    elif apci == APCI.A_ADC_READ:
+        # values separated in Channel_nr, Read_count
+        payload_data = [bin(int(payload_bytes[1:2].hex(), 16))[4:10], int(payload_bytes[2:3].hex(), 16)]
+    elif apci == APCI.A_ADC_RESPONSE:
+        # values separated in Channel_nr, Read_count, Sum of AD_converter_Access
+        payload_data = [bin(int(payload_bytes[1:2].hex(), 16))[4:10], int(payload_bytes[2:3].hex(), 16),
+                        int(payload_bytes[3].hex(), 16)]
+    elif apci == APCI.A_MEMORY_READ:
+        payload_bits = bin(int(payload_bytes[1:2].hex(), 16))[6:10]
+        # values separated in number, address
+        payload_data = [payload_bits, parse_knx_addr(payload_bytes[2:4])]
+    elif apci in memory_write_payload:
+        payload_bits = bin(int(payload_bytes[1:2].hex(), 16))[6:10]
+        # values separated in number, address, Data
+        payload_data = [payload_bits, parse_knx_addr(payload_bytes[2:4]), payload_bytes[4:].hex()]
+    elif apci in memory_bit_payload:
+        number = int(payload_bytes[2:3].hex(), 16)
+        # values separated in number, address, and_data, xor_data
+        payload_data = [number, parse_knx_addr(payload_bytes[3:5]), payload_bytes[5:5 + number].hex(),
+                        payload_bytes[5 + number:2 + 2 * number].hex()]
+    elif apci == APCI.A_USER_MEMORY_READ:
+        payload_bits = bin(int(payload_bytes[2:3].hex(), 16))
+        # values separated in address extension, number, address
+        payload_data = [int(payload_bits[0:4]), int(payload_bits[4:8]), parse_knx_addr(payload_bytes[3:5])]
+    elif apci in user_memory_payload:
+        payload_bits = bin(int(payload_bytes[2:3].hex(), 16))
+        # values separated in address extension, number, address, data
+        payload_data = [int(payload_bits[0:4]), int(payload_bits[4:8]), parse_knx_addr(payload_bytes[3:5]),
+                        payload_bytes[5:].hex()]
+    elif apci == APCI.A_USER_MANUFACTURE_INFO_RESPONSE:
+        # values separated in manufacturer_id, manufacturer specific
+        payload_data = [int(payload_bytes[2:3].hex(), 16), payload_bytes[3:5].hex()]
+    elif apci == APCI.A_AUTHORIZE_REQUEST:
+        # values separated in must be 0, Key
+        payload_data = [int(payload_bytes[2:3].hex(), 16), payload_bytes[3:].hex()]
+    elif apci == APCI.A_AUTHORIZE_RESPONSE:
+        payload_data = int(payload_bytes[2:3].hex(), 16)
+    elif apci == APCI.A_KEY_WRITE:
+        # values separated in level, key
+        payload_data = [int(payload_bytes[2:3].hex(), 16), payload_bytes[3:].hex()]
+    elif apci == APCI.A_KEY_RESPONSE:
+        payload_data = int(payload_bytes[2:3].hex(), 16)
     else:
         raise Exception(f'Parsing of Payload for {telegram.apci} not yet implemented!')
     return payload_data

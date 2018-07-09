@@ -54,6 +54,6 @@ telegram_df = pd.DataFrame(
     columns=TELEGRAM_VECTOR_COLUMNS,
 )
 
-print(telegram_df.to_string())
+mprint(telegram_df.to_string())
 # print(int(telegram_df['payload_data'][0], 16))
 # print(telegram_df['payload_data'][0])
