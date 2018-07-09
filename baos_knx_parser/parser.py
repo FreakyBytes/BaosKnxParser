@@ -55,11 +55,13 @@ def parse_knx_addr(binary, group=False):
 def parse_payload_data(apci, payload_bytes, payload_length):
     possible_short_payload = [APCI.A_INDIVIDUAL_ADDRESS_RESPONSE,
                               APCI.A_GROUP_VALUE_WRITE, APCI.A_GROUP_VALUE_RESPONSE]
-    no_payload = [APCI.A_GROUP_VALUE_READ, APCI.A_INDIVIDUAL_ADDRESS_READ]
+    no_payload = [APCI.A_GROUP_VALUE_READ, APCI.A_INDIVIDUAL_ADDRESS_READ, APCI.A_DOMAIN_ADDRESS_READ]
     individual_address_serial_number_payload = [APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_RESPONSE,
                                                 APCI.A_INDIVIDUAL_ADDRESS_SERIAL_NUMBER_WRITE]
     network_parameter_payload = [APCI.A_NETWORK_PARAMETER_READ, APCI.A_NETWORK_PARAMETER_RESPONSE,
                                  APCI.A_NETWORK_PARAMETER_WRITE]
+    domain_address_payload = [APCI.A_DOMAIN_ADDRESS_WRITE, APCI.A_DOMAIN_ADDRESS_RESPONSE]
+    property_value_payload = [APCI.A_PROPERTY_VALUE_RESPONSE, APCI.A_PROPERTY_VALUE_WRITE]
 
     if apci in possible_short_payload:
         if payload_length == 0:
@@ -80,6 +82,24 @@ def parse_payload_data(apci, payload_bytes, payload_length):
         # values separated in Interface object type, Property-ID, Test_info/Test_info+Test_result/Value
         payload_data = [int(payload_bytes[2:4].hex(), 16), int(payload_bytes[4:5].hex(), 16),
                         int(payload_bytes[5:2 + payload_length].hex(), 16)]
+    elif apci == APCI.A_SERVICE_INFORMATION_INDICATION_WRITE:
+        payload_bits = bin(int(payload_bytes[2:3].hex()))
+        # values separated in verify mode, dupl. phys. Addr, appl. stopped
+        payload_data = [payload_bits[5], payload_bits[6], payload_bits[7]]
+    elif apci in domain_address_payload:
+        payload_data = parse_knx_addr(payload_bytes[2:2+payload_length], True)
+    elif apci == APCI.A_DOMAIN_ADDRESS_SELECTIVE_READ:
+        # values separated in domain address, start address, range
+        payload_data = [parse_knx_addr(payload_bytes[2:4], True), parse_knx_addr(payload_bytes[4:6]), payload_bytes[6]]
+    elif apci == APCI.A_PROPERTY_VALUE_READ:
+        payload_bits = bin(int(payload_bytes[4:6]))
+        # values separated in Object_index, Property_id, nr_of_elem, Start_index
+        payload_data = [payload_bytes[2:3], payload_bytes[3:4], int(payload_bits[0:4]), int(payload_bits[4:])]
+    elif apci in property_value_payload:
+        payload_bits = bin(int(payload_bytes[4:6]))
+        # values separated in Object_index, Property_id, nr_of_elem, Start_index, Data
+        payload_data = [payload_bytes[2:3], payload_bytes[3:4], int(payload_bits[0:4]), int(payload_bits[4:]),
+                        payload_bytes[6:2 + payload_length]]
     else:
         raise Exception(f'Parsing of Payload for {telegram.apci} not yet implemented!')
     return payload_data
