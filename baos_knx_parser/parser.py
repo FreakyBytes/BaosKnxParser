@@ -1,17 +1,59 @@
 
 from . import struct
 from .const import TelegramType, APCI
-from .knx import KnxAddress, KnxExtendedTelegram, KnxStandardTelegram
-
+from .knx import KnxAddress, KnxExtendedTelegram, KnxStandardTelegram, KnxAcknowledgementTelegram
 
 def parse_knx_telegram(binary, timestamp=None):
-    telegram = None
-
-    # cEMI stuff
+    # check message code
     msg_code, = struct.CEMI_MSG_CODE.unpack(binary[0:1])
-    if msg_code != 0x29:
-        raise TypeError("Can only parse L_Data.ind (0x29) at the moment, but got {}".format(hex(msg_code)))
+    if msg_code == 0x29:
+        return parse_data_ind(binary, timestamp)
+    elif msg_code == 0x2B:
+        return parse_busmon_ind(binary, timestamp)
+    else:
+        raise TypeError("Can only parse L_Data.ind (0x29) and L_Busmon.ind (0x2B) at the moment, but got {}".format(hex(msg_code)))
 
+
+def parse_busmon_ind(binary, timestamp=None):
+    telegram = None
+    add_len, = struct.CEMI_ADD_LEN.unpack(binary[1:2])
+    knx_binary = binary[add_len + 2:]
+
+    if len(knx_binary) == 1:
+        # handle ACK telegram
+        acknowledgement, = struct.KNX_ACK.unpack(knx_binary[0:1])
+        return KnxAcknowledgementTelegram(acknowledgement=acknowledgement)
+
+    # parse CTRL
+    frame_type_flag, repeated_flag, system_broadcast_flag, priority, acknowledge_request_flag, confirm_flag = struct.KNX_CTRL.unpack(knx_binary[0:1])
+    acknowledge_request_flag = not acknowledge_request_flag # acknowledge_request_flag flag is send inverted
+    confirm_flag = not confirm_flag  # if `not confirm_flag` => error
+    repeated_flag = not repeated_flag  # same with repeated_flag flag
+
+    # parse NPCI
+    destination_address_type, hop_count, payload_length = struct.KNX_NPCI.unpack(knx_binary[5:6])
+
+    # create data model class
+    if frame_type_flag == TelegramType.EXT:
+        telegram = KnxExtendedTelegram(timestamp=timestamp, telegram_type=frame_type_flag, repeat=repeated_flag, ack=acknowledge_request_flag,
+                                       priority=priority, confirm=confirm_flag, hop_count=hop_count)
+    else:
+        telegram = KnxStandardTelegram(timestamp=timestamp, telegram_type=frame_type_flag, repeat=repeated_flag, ack=acknowledge_request_flag,
+                                       priority=priority, confirm=confirm_flag, hop_count=hop_count)
+    
+    # parse addresses
+    telegram.src = parse_knx_addr(knx_binary[1:3])
+    telegram.dest = parse_knx_addr(knx_binary[3:5], group=destination_address_type)
+
+    # parse payload
+    telegram.payload_length = payload_length - 1
+    telegram.payload = knx_binary[6:8 + telegram.payload_length]
+    apci = telegram.apci
+    telegram.payload_data = parse_payload_data(apci, knx_binary[6:8 + telegram.payload_length], telegram.payload_length)
+    return telegram
+
+def parse_data_ind(binary, timestamp=None):
+    telegram = None
     add_len, = struct.CEMI_ADD_LEN.unpack(binary[1:2])
     knx_binary = binary[add_len + 2:]
 
@@ -176,5 +218,5 @@ def parse_payload_data(apci, payload_bytes, payload_length):
     elif apci == APCI.A_KEY_RESPONSE:
         payload_data = int(payload_bytes[2:3].hex(), 16)
     else:
-        raise Exception(f'Parsing of Payload for {telegram.apci} not yet implemented!')
+        raise Exception('Parsing of Payload for {0} not yet implemented!'.format(telegram.apci))
     return payload_data
