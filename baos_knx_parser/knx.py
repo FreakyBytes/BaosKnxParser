@@ -55,6 +55,12 @@ class KnxAddress(object):
         else:
             return struct.KNX_ADDR_GROUP.pack(self.area, self.line, self.device)
 
+    def is_group_address(self):
+        return self.group
+
+    def is_physical_address(self):
+        return not self.group
+
 
 class KnxBaseTelegram(object):
 
