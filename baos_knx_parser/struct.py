@@ -16,4 +16,7 @@ KNX_LENGTH = STD_U8
 KNX_APCI = bitstruct.compile('>p6u10')
 KNX_TPCI = bitstruct.compile('>u2p4p2')
 KNX_TPCI_APCI = bitstruct.compile('>u2u4u10')
+KNX_NPCI = bitstruct.compile('>b1u3u4')
 KNX_PACKET_NUMBER = bitstruct.compile('>p2u4p2')
+
+KNX_ACK = STD_U8

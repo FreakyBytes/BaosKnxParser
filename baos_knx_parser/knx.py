@@ -2,7 +2,7 @@
 from datetime import datetime
 
 from . import struct  # precompiled bitstructs
-from .const import TelegramType, TelegramPriority, APCI, TPCI
+from .const import TelegramType, TelegramPriority, APCI, TPCI, TelegramAcknowledgement
 
 
 class KnxAddress(object):
@@ -188,3 +188,11 @@ class KnxExtendedTelegram(KnxBaseTelegram):
         ))
 
         return binary
+
+class KnxAcknowledgementTelegram(object):
+
+    def __init__(self, acknowledgement=TelegramAcknowledgement.ACK):
+        self.acknowledgement = TelegramAcknowledgement(acknowledgement)
+
+    def __repr__(self):
+        return """KnxAcknowledgementTelegram(ack='{0}')""".format(repr(self.acknowledgement))
