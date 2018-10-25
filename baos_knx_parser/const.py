@@ -81,3 +81,10 @@ class TelegramPriority(BitmaskEnum):
     URGENT  = 0b10
     NORMAL  = 0b01
     LOW     = 0b11
+
+
+class TelegramAcknowledgement(BitmaskEnum):
+    ACK       = 0b11001100
+    BUSY      = 0b11000000
+    NACK      = 0b00001100
+    NACK_BUSY = 0b00000000
