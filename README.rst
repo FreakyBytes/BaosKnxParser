@@ -11,3 +11,15 @@ Installation
 ------------
 
 :code:`pip install git+https://github.com/FreakyBytes/BaosKnxParser.git`
+
+
+------------
+Contributors
+------------
+
+(In no particular order)
+
+  * Martin Peters (FreakyBytes)
+  * auwin
+  * MaxXor
+  * Johannes Goltz (GaryGhost93)
