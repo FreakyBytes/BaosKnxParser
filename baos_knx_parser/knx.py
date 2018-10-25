@@ -55,6 +55,12 @@ class KnxAddress(object):
         else:
             return struct.KNX_ADDR_GROUP.pack(self.area, self.line, self.device)
 
+    def is_group_address(self):
+        return self.group
+
+    def is_physical_address(self):
+        return not self.group
+
 
 class KnxBaseTelegram(object):
 
@@ -71,7 +77,7 @@ class KnxBaseTelegram(object):
 
     def __repr__(self):
         return """KnxExtendedTelegram(src='{src}', dest='{dest}', telegram_type={tt},
-    repeat={repeat}, ack={ack}, priority={prio}, hop_count=0, timestamp={timestamp})""".format(tt=repr(self.telegram_type), prio=repr(self.priority), **self.__dict__)
+    repeat={repeat}, ack={ack}, priority={prio}, hop_count={hop_count}, timestamp={timestamp})""".format(tt=repr(self.telegram_type), prio=repr(self.priority), **self.__dict__)
 
     @property
     def tpdu(self):
@@ -130,7 +136,7 @@ class KnxStandardTelegram(KnxBaseTelegram):
     def __repr__(self):
         p = self.payload.hex()
         return """KnxStandardTelegram(src='{src}', dest='{dest}', telegram_type={tt},
-    repeat={repeat}, ack={ack}, priority={prio}, hop_count=0, timestamp='{timestamp}',
+    repeat={repeat}, ack={ack}, priority={prio}, hop_count={hop_count}, timestamp='{timestamp}',
     payload_length={payload_length}, payload=payload=bytes.fromhex('{p}')), payload_data={payload_data}"""\
             .format(tt=repr(self.telegram_type), prio=repr(self.priority), p=p, **self.__dict__)
 
@@ -166,7 +172,7 @@ class KnxExtendedTelegram(KnxBaseTelegram):
         eff = hex(self.eff)
         p = self.payload.hex()
         return """KnxExtendedTelegram(src='{src}', dest='{dest}', telegram_type={tt},
-    repeat={repeat}, ack={ack}, priority={prio}, hop_count=0, timestamp='{timestamp}',
+    repeat={repeat}, ack={ack}, priority={prio}, hop_count={hop_count}, timestamp='{timestamp}',
     eff=bytes.fromhex('{eff_hex}'), payload_length={payload_length}, payload=bytes.fromhex('{p}'))""".format(tt=repr(self.telegram_type), prio=repr(self.priority), p=p, eff_hex=eff, **self.__dict__)
 
     def to_binary(self):
